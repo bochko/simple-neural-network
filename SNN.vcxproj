@@ -151,10 +151,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="layer.h" />
-    <ClInclude Include="matrix.h" />
-    <ClInclude Include="network.h" />
-    <ClInclude Include="neuron.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
