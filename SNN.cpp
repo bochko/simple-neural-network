@@ -382,7 +382,7 @@ public:
             // negative and positive errors don't cancel each other
 
             // should we square each member to promote big values?
-            total_error += /*std::abs*/(this->err_output.at(evtor_idx));
+            total_error += std::abs(this->err_output.at(evtor_idx));
         }
         return total_error;
     }
@@ -410,7 +410,7 @@ public:
         {
             FPOINT dfsval = derived_oth->get_val(0, idx);
             FPOINT errval = this->err_output.at(idx);
-            FPOINT gradient = dfsval * errval;
+            FPOINT gradient = (dfsval * (errval * 0.01));
             // store it in the gradient matrix
             gradients_oth->set_val(0, idx, gradient);
         }
@@ -609,7 +609,7 @@ int main() {
 //    real_neural_network->bprop();
 
     std::cout << "========== REAL RUN ==========" << std::endl;
-#define LEARNING_ITERATIONS 100000
+#define LEARNING_ITERATIONS 1000000
         network::topology_vector big_topology = {3, 8, 3};
         network* real_neural_network = new network(big_topology);
         for(int i = 0; i < LEARNING_ITERATIONS; i++)
@@ -622,6 +622,7 @@ int main() {
         }
         std::cout << "=== FINAL ERROR ===" << std::endl;
         std::cout << real_neural_network->get_err_total() << std::endl;
+        std::cout << real_neural_network->get_str();
 
     return 0;
 }
