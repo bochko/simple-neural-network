@@ -7,10 +7,10 @@
 
 #include <vector>
 
-#define FPOINT                double
-#define LDIM                int
-#define INPUT_LAYER_IDX        0 // always 0
-#define FUNKY_DECORATOR        "***"
+#define FPOINT                  double
+#define LDIM                    int
+#define INPUT_LAYER_IDX         0 // always 0
+#define FUNKY_DECORATOR         "***"
 
 // implements a neuron building block containing three values:
 // the raw input value, the fast sigmoid result, and the derivative
@@ -445,16 +445,16 @@ public:
         new_weights.push_back(new_weights_oth);
 
         gradients = new matrix(gradients_oth->row_count(), gradients_oth->col_count());
-        for(LDIM r = 0; r < gradients->row_count(); r++)
+        for(LDIM r = 0; r < gradients_oth->row_count(); r++)
         {
-            for(LDIM c=0; c< gradients->col_count(); c++)
+            for(LDIM c=0; c< gradients_oth->col_count(); c++)
             {
                 gradients->set_val(r, c, gradients_oth->get_val(r, c));
             }
         }
 
-        std::cout <<"Output to Hidden new Weights:" << std::endl;
-        std::cout << new_weights_oth->get_str() << std::endl;
+//        std::cout <<"Output to Hidden new Weights:" << std::endl;
+//        std::cout << new_weights_oth->get_str() << std::endl;
 
         // next hidden layers down to the input one
         for(idx = output_layer_idx - 1; idx > 0 /* skip input layer */; idx--)
@@ -475,7 +475,8 @@ public:
                 {
                     // gradients are same sizes as neurons so gradient row is 0
                     // and column is always the current weight matrix row number
-                    FPOINT p = gradients->get_val(0, r) * weight_matrix->get_val(r, c);
+                    // gradients or derived gradients?
+                    FPOINT p = gradients->get_val(0, c /*r?*/) * weight_matrix->get_val(r, c);
                     sum += p;
                 }
                 // rows in weight matrix is neurons,
@@ -533,7 +534,7 @@ public:
         std::reverse(new_weights.begin(), new_weights.end());
         this->weights = new_weights;
 
-        std::cout << this->get_str() << std::endl;
+//        std::cout << this->get_str() << std::endl;
     }
 
 private:
@@ -547,65 +548,80 @@ private:
 };
 
 int main() {
-    // NEURON CREATED
-    neuron *n = new neuron(1.5f);
-    std::cout << "Neuron constructor test:" << std::endl;
-    std::cout << "raw: " << n->get_raw() << std::endl;
-    std::cout << "fs: " << n->get_fs() << std::endl;
-    std::cout << "dfs: " << n->get_fsd() << std::endl << std::endl;
+//    // NEURON CREATED
+//    neuron *n = new neuron(1.5f);
+//    std::cout << "Neuron constructor test:" << std::endl;
+//    std::cout << "raw: " << n->get_raw() << std::endl;
+//    std::cout << "fs: " << n->get_fs() << std::endl;
+//    std::cout << "dfs: " << n->get_fsd() << std::endl << std::endl;
+//
+//    // MATRIX CREATED
+//    matrix *m = new matrix(3, 2);
+//    std::cout << "Matrix constructor test:" << std::endl;
+//    std::cout << m->get_str() << std::endl;
+//
+//    std::cout << "Matrix randomization test:" << std::endl;
+//    m->fill_rand();
+//    std::cout << m->get_str() << std::endl;
+//
+//    std::cout << "Matrix transpose test:" << std::endl;
+//    matrix *mnew = m->transpose();
+//    std::cout << mnew->get_str() << std::endl;
+//
+//    std::cout << "Test neural network class:" << std::endl;
+//    network::topology_vector topology = {6, 10, 2};
+//    network *nn = new network(topology);
+//    nn->set_input(std::vector<FPOINT>{0.7f, 3.1f, 5.0f, 0.7f, 3.1f, 5.0f});
+//    std::cout << nn->get_str() << std::endl;
+//
+//    std::cout << "Test matrix multiplication:" << std::endl;
+//    matrix *mmul1 = new matrix(1, 4);
+//    mmul1->fill_rand();
+//    matrix *mmul2 = new matrix(4, 2);
+//    mmul2->fill_rand();
+//    matrix *mmulr = mmul1->mul(mmul2);
+//    std::cout << "Matrix 1: \n" << mmul1->get_str() << std::endl;
+//    std::cout << "Matrix 2: \n" << mmul2->get_str() << std::endl;
+//    std::cout << "Matrix Product: \n" << mmulr->get_str() << std::endl;
+//
+//    std::cout << "Test feeding forward:" << std::endl;
+//    network::topology_vector big_topology = {3, 2, 3};
+//    network *real_neural_network = new network(big_topology);
+//
+//    // setting input test (only after defining topology)
+//    real_neural_network->set_input(std::vector<FPOINT>{
+//            1, 0, 1
+//    });
+//    std::cout << "Input layer set:" << std::endl;
+//    std::cout << real_neural_network->get_str() << std::endl;
+//
+//    // feed forward test (only after setting input)
+//    real_neural_network->feed_forward();
+//    std::cout << "After feed-forward procedure" << std::endl;
+//    std::cout << real_neural_network->get_str() << std::endl;
+//
+//    // net error test (only after feed-forward)
+//    std::cout << "Net error" << std::endl;
+//    real_neural_network->calc_err(std::vector<FPOINT>{0.75, 0.75, 0.75});
+//    std::cout << real_neural_network->get_err_total() << std::endl;
+//
+//    std::cout << "Back Propagation" << std::endl;
+//    real_neural_network->bprop();
 
-    // MATRIX CREATED
-    matrix *m = new matrix(3, 2);
-    std::cout << "Matrix constructor test:" << std::endl;
-    std::cout << m->get_str() << std::endl;
-
-    std::cout << "Matrix randomization test:" << std::endl;
-    m->fill_rand();
-    std::cout << m->get_str() << std::endl;
-
-    std::cout << "Matrix transpose test:" << std::endl;
-    matrix *mnew = m->transpose();
-    std::cout << mnew->get_str() << std::endl;
-
-    std::cout << "Test neural network class:" << std::endl;
-    network::topology_vector topology = {6, 10, 2};
-    network *nn = new network(topology);
-    nn->set_input(std::vector<FPOINT>{0.7f, 3.1f, 5.0f, 0.7f, 3.1f, 5.0f});
-    std::cout << nn->get_str() << std::endl;
-
-    std::cout << "Test matrix multiplication:" << std::endl;
-    matrix *mmul1 = new matrix(1, 4);
-    mmul1->fill_rand();
-    matrix *mmul2 = new matrix(4, 2);
-    mmul2->fill_rand();
-    matrix *mmulr = mmul1->mul(mmul2);
-    std::cout << "Matrix 1: \n" << mmul1->get_str() << std::endl;
-    std::cout << "Matrix 2: \n" << mmul2->get_str() << std::endl;
-    std::cout << "Matrix Product: \n" << mmulr->get_str() << std::endl;
-
-    std::cout << "Test feeding forward:" << std::endl;
-    network::topology_vector big_topology = {3, 2, 3};
-    network *real_neural_network = new network(big_topology);
-
-    // setting input test (only after defining topology)
-    real_neural_network->set_input(std::vector<FPOINT>{
-            1, 0, 1
-    });
-    std::cout << "Input layer set:" << std::endl;
-    std::cout << real_neural_network->get_str() << std::endl;
-
-    // feed forward test (only after setting input)
-    real_neural_network->feed_forward();
-    std::cout << "After feed-forward procedure" << std::endl;
-    std::cout << real_neural_network->get_str() << std::endl;
-
-    // net error test (only after feed-forward)
-    std::cout << "Net error" << std::endl;
-    real_neural_network->calc_err(std::vector<FPOINT>{0.75, 0.75, 0.75});
-    std::cout << real_neural_network->get_err_total() << std::endl;
-
-    std::cout << "Back Propagation" << std::endl;
-    real_neural_network->bprop();
+    std::cout << "========== REAL RUN ==========" << std::endl;
+#define LEARNING_ITERATIONS 100000
+        network::topology_vector big_topology = {3, 8, 3};
+        network* real_neural_network = new network(big_topology);
+        for(int i = 0; i < LEARNING_ITERATIONS; i++)
+        {
+            real_neural_network->set_input(std::vector<FPOINT>{1, 1, 1});
+            real_neural_network->feed_forward();
+            real_neural_network->calc_err(std::vector<FPOINT>{0, 1, 0});
+            std::cout << "Net error: " << real_neural_network->get_err_total() << std::endl;
+            real_neural_network->bprop();
+        }
+        std::cout << "=== FINAL ERROR ===" << std::endl;
+        std::cout << real_neural_network->get_err_total() << std::endl;
 
     return 0;
 }
