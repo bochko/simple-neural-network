@@ -325,6 +325,12 @@ public:
                 // assign as input to next layer
                 this->layers.at(layer_idx + 1)->set_val(next_neuron, product_vals->at(next_neuron));
             }
+
+            // dealloc
+            delete neuron_matrix;
+            delete product_matrix;
+            delete product_vals;
+            // we do not delete weight_matrix, as it just points to a pre-allocated matrix
         }
     }
 
@@ -337,11 +343,13 @@ public:
                 matrix *m = this->layers.at(layer_idx)->get_raw_matrix();
                 sstream << "Network input layer: " << std::endl;
                 sstream << m->get_str();
+                delete m;
             } else {
                 // print fast sigmoid calculated value otherwise
                 matrix *m = this->layers.at(layer_idx)->get_fs_matrix();
                 sstream << "Network Layer: " << std::endl;
                 sstream << m->get_str();
+                delete m;
             }
             if (layer_idx < (LDIM) this->weights.size()) {
                 sstream << FUNKY_DECORATOR << std::endl;
@@ -365,12 +373,13 @@ public:
             abort();
         }
 
+        matrix* m = this->layers.at(this->layers.size() - 1)->get_fs_matrix();
         for (LDIM idx = 0; idx < (LDIM) targets.size(); idx++) {
-            FPOINT err =
-                    this->layers.at(this->layers.size() - 1)->get_fs_matrix()->get_val(0, idx);
+            FPOINT err = m->get_val(0, idx);
             err -= targets.at(idx);
             err_output.at(idx) = err;
         }
+        delete m;
 
         err_historical.push_back(get_err_total());
     }
@@ -532,9 +541,13 @@ public:
 
         // use algorithm reverse iterators?
         std::reverse(new_weights.begin(), new_weights.end());
+        for(int i = 0; i < this->weights.size(); i++)
+        {
+            delete this->weights.at(i);
+        }
+        // replace weights with new ones
         this->weights = new_weights;
 
-//        std::cout << this->get_str() << std::endl;
     }
 
 private:
