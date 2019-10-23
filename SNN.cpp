@@ -3,6 +3,7 @@
 #include <random>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 #include <vector>
 
@@ -344,6 +345,7 @@ public:
             }
             if (layer_idx < (LDIM) this->weights.size()) {
                 sstream << FUNKY_DECORATOR << std::endl;
+                sstream << "WEIGHTS at layer " << layer_idx << std::endl;
                 sstream << this->weights.at(layer_idx)->get_str() << std::endl;
             }
         }
@@ -380,7 +382,7 @@ public:
             // negative and positive errors don't cancel each other
 
             // should we square each member to promote big values?
-            total_error += std::abs(this->err_output.at(evtor_idx));
+            total_error += /*std::abs*/(this->err_output.at(evtor_idx));
         }
         return total_error;
     }
@@ -394,51 +396,151 @@ public:
     }
 
     void bprop() {
-        // from the output layer to the hidden layers
-        LDIM ol_index = this->layers.size() - 1; // output layer index
-        matrix *output_to_hidden_dfs = this->layers.at(ol_index)->get_fsd_matrix();
-        // construct matrix with dimension 1 and the length of neurons in output layer
-        matrix *output_to_hidden_grads =
-                new matrix(1, (this->layers.at(ol_index)->get_size()));
+        std::vector<matrix*> new_weights;
+        matrix* gradients;
+        // direction: output to hidden layer
+        LDIM output_layer_idx = (LDIM) this->layers.size() - 1;
+        // derived values for output layer
+        matrix* derived_oth = this->layers.at(output_layer_idx)->get_fsd_matrix();
+        // have a column for each neuron in the layer, always one row
+        matrix* gradients_oth = new matrix(1, this->layers.at(output_layer_idx)->get_size());
 
-        for (LDIM err_idx = 0; err_idx < (LDIM) this->err_output.size(); err_idx++) {
-            // always row zero because single dimensional
-            double dfsval = output_to_hidden_dfs->get_val(0, err_idx);
-            double error = this->err_output[err_idx];
-            double gradient = dfsval * error;
-
-            // fill in our matrix of output to hidden error gradients
-            // always row zero because single dimensional
-            output_to_hidden_grads->set_val(0, err_idx, gradient);
+        LDIM idx;
+        for(idx = 0; idx < (LDIM) this->err_output.size(); idx++)
+        {
+            FPOINT dfsval = derived_oth->get_val(0, idx);
+            FPOINT errval = this->err_output.at(idx);
+            FPOINT gradient = dfsval * errval;
+            // store it in the gradient matrix
+            gradients_oth->set_val(0, idx, gradient);
         }
 
-        LDIM last_hidden_layer_index = ol_index - 1U;
-        // get the outer-most hidden layer
-        layer *last_hidden_layer = this->layers.at(last_hidden_layer_index);
-        // get the weights between the hidden layer and the output layer
-        matrix *weights_output_to_hidden = this->weights.at(last_hidden_layer_index);
-        // transposed gradients
-        matrix *transposed_gradients = output_to_hidden_grads->transpose();
-        // product of transposed gradients and activated (fs) values
-        matrix *matrix_fs_values = last_hidden_layer->get_fs_matrix();
-        matrix *delta_weights_output_to_hidden =
-                transposed_gradients->mul(matrix_fs_values);
+        LDIM last_hidden_layer_idx = output_layer_idx - 1;
+        layer* last_hidden_layer = this->layers.at(last_hidden_layer_idx);
+        matrix* weights_oth = this->weights.at(output_layer_idx - 1);
+        matrix* gradients_transpose = gradients_oth->transpose();
+        matrix* activated_vals_last_hidden = last_hidden_layer->get_fs_matrix();
+        // delta weights is the transpose of the gradient
+        // multiplied with the activated values of the last hidden layer
+        matrix* delta_weights_oth_t = gradients_transpose->mul(activated_vals_last_hidden);
+        // now transpose so that you get it in the same format as the ACTUAL
+        // weights_oth (output to hidden)
+        matrix* delta_weights_oth = delta_weights_oth_t->transpose();
+        // some size assertions need to be done here
+        matrix* new_weights_oth = new matrix(delta_weights_oth->row_count(), delta_weights_oth->col_count());
 
-        // now compute for each of the other layers
-        // backwards because it makes logical sense
-        // USING AN UNSIGNED VALUE AS LAYER_IDX CAUSES LOOP TO LOOP FOREVER BECAUSE OF OVERFLOW
-        // WHEN SUBTRACT FROM 0 at layer_idx = 0U
-        for (LDIM layer_idx = (ol_index - 1U); layer_idx > 0; layer_idx--) {
-            // we are computing the difference that each weight makes
 
+
+        for(LDIM r = 0; r < delta_weights_oth->row_count(); r++)
+        {
+            for(LDIM c=0; c< delta_weights_oth->col_count(); c++)
+            {
+                FPOINT current_weight = weights_oth->get_val(r, c);
+                FPOINT delta_weight = delta_weights_oth->get_val(r, c);
+                // here we record the new weight value
+                new_weights_oth->set_val(r, c, current_weight - delta_weight);
+            }
         }
 
+        new_weights.push_back(new_weights_oth);
+
+        gradients = new matrix(gradients_oth->row_count(), gradients_oth->col_count());
+        for(LDIM r = 0; r < gradients->row_count(); r++)
+        {
+            for(LDIM c=0; c< gradients->col_count(); c++)
+            {
+                gradients->set_val(r, c, gradients_oth->get_val(r, c));
+            }
+        }
+
+        std::cout <<"Output to Hidden new Weights:" << std::endl;
+        std::cout << new_weights_oth->get_str() << std::endl;
+
+        // next hidden layers down to the input one
+        for(idx = output_layer_idx - 1; idx > 0 /* skip input layer */; idx--)
+        {
+            layer* l = this->layers.at(idx);
+            matrix* derived_hidden = l->get_fsd_matrix();
+            // gradient size will always be the size of our current layer
+            matrix* derived_gradients = new matrix(1, l->get_size());
+            // weight matrix
+            matrix* activated_hidden = l->get_fs_matrix();
+            matrix* weight_matrix = this->weights.at(idx);
+            matrix* original_weights = this->weights.at(idx - 1);
+            // we are in the last hidden layer
+            for (LDIM r = 0; r < weight_matrix->row_count(); r++)
+            {
+                FPOINT sum = 0.0f;
+                for(LDIM c = 0; c < weight_matrix->col_count(); c++)
+                {
+                    // gradients are same sizes as neurons so gradient row is 0
+                    // and column is always the current weight matrix row number
+                    FPOINT p = gradients->get_val(0, r) * weight_matrix->get_val(r, c);
+                    sum += p;
+                }
+                // rows in weight matrix is neurons,
+                // each col is the connections to the neurons in the next layer
+                double g = sum * activated_hidden->get_val(0, r);
+                derived_gradients->set_val(0, r, g);
+            }
+
+            matrix* left_neurons;
+            // if input layer is on the left
+            if((idx - 1) == 0)
+            {
+                // input layer stays raw and never gets activated
+                left_neurons = this->layers.at(idx -1)->get_raw_matrix();
+            }
+            else
+            {
+                // otherwise get the vals after activation
+                left_neurons = this->layers.at(idx - 1)->get_fs_matrix();
+            }
+
+            matrix* derived_gradients_T = derived_gradients->transpose();
+            matrix* delta_weights_T = derived_gradients_T->mul(left_neurons);
+            matrix* delta_weights = delta_weights_T->transpose();
+
+            matrix* new_weights_hidden = new matrix(delta_weights->row_count(), delta_weights->col_count());
+
+            for(LDIM r = 0; r < new_weights_hidden->row_count(); r++)
+            {
+                for(LDIM c=0; c< new_weights_hidden->col_count(); c++)
+                {
+                    FPOINT w = original_weights->get_val(r, c);
+                    FPOINT d = delta_weights->get_val(r, c);
+                    FPOINT new_weight = w - d;
+                    new_weights_hidden->set_val(r, c, new_weight);
+                }
+            }
+            new_weights.push_back(new_weights_hidden);
+
+            gradients = new matrix(derived_gradients->row_count(), derived_gradients->col_count());
+            for(LDIM r = 0; r < gradients->row_count(); r++)
+            {
+                for(LDIM c=0; c< gradients->col_count(); c++)
+                {
+                    gradients->set_val(r, c, derived_gradients->get_val(r, c));
+                }
+            }
+        }
+
+        // as the new weight matrices were pushed back in reverse,
+        // we need to invert their order before we assign them to
+        // be our current standard weight matrices
+
+        // use algorithm reverse iterators?
+        std::reverse(new_weights.begin(), new_weights.end());
+        this->weights = new_weights;
+
+        std::cout << this->get_str() << std::endl;
     }
 
 private:
     topology_vector topology;
-    std::vector<layer *> layers;
-    std::vector<matrix *> weights;
+    std::vector<layer*> layers;
+    std::vector<matrix*> weights;
+    std::vector<matrix*> gradients;
     std::vector<FPOINT> input;
     std::vector<FPOINT> err_output;
     std::vector<FPOINT> err_historical;
@@ -466,9 +568,9 @@ int main() {
     std::cout << mnew->get_str() << std::endl;
 
     std::cout << "Test neural network class:" << std::endl;
-    network::topology_vector topology = {3, 2, 3};
+    network::topology_vector topology = {6, 10, 2};
     network *nn = new network(topology);
-    nn->set_input(std::vector<FPOINT>{0.7f, 3.1f, 5.0f});
+    nn->set_input(std::vector<FPOINT>{0.7f, 3.1f, 5.0f, 0.7f, 3.1f, 5.0f});
     std::cout << nn->get_str() << std::endl;
 
     std::cout << "Test matrix multiplication:" << std::endl;
@@ -482,7 +584,7 @@ int main() {
     std::cout << "Matrix Product: \n" << mmulr->get_str() << std::endl;
 
     std::cout << "Test feeding forward:" << std::endl;
-    network::topology_vector big_topology = {3, 2, 1};
+    network::topology_vector big_topology = {3, 2, 3};
     network *real_neural_network = new network(big_topology);
 
     // setting input test (only after defining topology)
@@ -499,9 +601,10 @@ int main() {
 
     // net error test (only after feed-forward)
     std::cout << "Net error" << std::endl;
-    real_neural_network->calc_err(std::vector<FPOINT>{0.75});
+    real_neural_network->calc_err(std::vector<FPOINT>{0.75, 0.75, 0.75});
     std::cout << real_neural_network->get_err_total() << std::endl;
 
+    std::cout << "Back Propagation" << std::endl;
     real_neural_network->bprop();
 
     return 0;
