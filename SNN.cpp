@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "snn_config.h"
+#include "neuron.h"
 
 class matrix {
 public:
