@@ -7,66 +7,14 @@
 
 #include <vector>
 
-#define FPOINT                  double
-#define LDIM                    int
-#define INPUT_LAYER_IDX         0 // always 0
-#define FUNKY_DECORATOR         "***"
-
-// implements a neuron building block containing three values:
-// the raw input value, the fast sigmoid result, and the derivative
-// of a fast sigmoid
-class neuron {
-public:
-
-    neuron(FPOINT val) {
-        this->raw = val;
-        // activate via fast sigmoid
-        this->calc_fs();
-        // calculate fast sigmoid derivative
-        this->calc_fsd();
-    }
-
-    // activation function
-    // f(x) = x / (1 + abs(x))
-    void calc_fs() {
-        this->fs = this->raw / (1.0f + std::abs(this->raw));
-        // 1 / std::abs(x) can never be 0 so no need to check on division
-    }
-
-    // derivative of fast sigmoid function
-    // f'(x) = f(x) * (1 - f(x))
-    void calc_fsd() {
-        this->fsd = this->fs * (1.0f - this->fs);
-    }
-
-    // get/set
-    FPOINT get_raw() { return this->raw; }
-
-    FPOINT get_fs() { return this->fs; }
-
-    FPOINT get_fsd() { return this->fsd; }
-
-    void set_raw(FPOINT new_raw) {
-        this->raw = new_raw;
-        this->calc_fs();
-        this->calc_fsd();
-    }
-
-private:
-    // raw
-    FPOINT raw;
-    // linearized
-    FPOINT fs;
-    // derivative
-    FPOINT fsd;
-};
+#include "snn_config.h"
 
 class matrix {
 public:
-    matrix(LDIM nrow, LDIM ncol) {
-        for (LDIM row_idx = 0; row_idx < nrow; row_idx++) {
-            std::vector<FPOINT> column_matrix_storage; // inner
-            for (LDIM col_idx = 0; col_idx < ncol; col_idx++) {
+    matrix(dimension_size nrow, dimension_size ncol) {
+        for (dimension_size row_idx = 0; row_idx < nrow; row_idx++) {
+            std::vector<floating_type> column_matrix_storage; // inner
+            for (dimension_size col_idx = 0; col_idx < ncol; col_idx++) {
                 column_matrix_storage.push_back(0.0f);
             }
             this->values.push_back(column_matrix_storage);
@@ -77,36 +25,36 @@ public:
         // no dynamic allocations
     }
 
-    void set_val(LDIM row, LDIM col, FPOINT value) {
+    void set_val(dimension_size row, dimension_size col, floating_type value) {
         values.at(row).at(col) = value;
     }
 
-    FPOINT get_val(LDIM row, LDIM col) {
+    floating_type get_val(dimension_size row, dimension_size col) {
         return values.at(row).at(col);
     }
 
-    LDIM row_count() {
+    dimension_size row_count() {
         // assume first dimension is rows
-        return (LDIM) values.size();
+        return (dimension_size) values.size();
     }
 
-    LDIM col_count() {
+    dimension_size col_count() {
         // since vector of vectors, and all interior vectors
         // are identical in size, we can use the first one to get the
         // length of the second dimension
-        return (LDIM) values.at(0).size();
+        return (dimension_size) values.at(0).size();
     }
 
     // relies constructor has been used and valid
     void fill_rand() {
         std::random_device rdev;
         std::mt19937 rng(rdev());
-        std::uniform_real_distribution<FPOINT> distribution(0.0f, 1.0f);
-        LDIM row_size = this->row_count();
-        LDIM col_size = this->col_count();
+        std::uniform_real_distribution<floating_type> distribution(0.0f, 1.0f);
+        dimension_size row_size = this->row_count();
+        dimension_size col_size = this->col_count();
 
-        for (LDIM row_idx = 0; row_idx < row_size; row_idx++) {
-            for (LDIM col_idx = 0; col_idx < col_size; col_idx++) {
+        for (dimension_size row_idx = 0; row_idx < row_size; row_idx++) {
+            for (dimension_size col_idx = 0; col_idx < col_size; col_idx++) {
                 this->values.at(row_idx).at(col_idx) = distribution(rng);
             }
         }
@@ -115,10 +63,10 @@ public:
     // you must manually dispose of the object created by this function
     matrix *transpose(void) {
         matrix *transposed = new matrix(this->col_count(), this->row_count());
-        LDIM row_size = transposed->row_count();
-        LDIM col_size = transposed->col_count();
-        for (LDIM row_idx = 0; row_idx < row_size; row_idx++) {
-            for (LDIM col_idx = 0; col_idx < col_size; col_idx++) {
+        dimension_size row_size = transposed->row_count();
+        dimension_size col_size = transposed->col_count();
+        for (dimension_size row_idx = 0; row_idx < row_size; row_idx++) {
+            for (dimension_size col_idx = 0; col_idx < col_size; col_idx++) {
                 transposed->set_val(row_idx, col_idx, this->get_val(col_idx, row_idx));
             }
         }
@@ -134,10 +82,10 @@ public:
             return nullptr;
         }
         matrix *ret = new matrix(this->row_count(), mmul->col_count());
-        for (LDIM orow_idx = 0; orow_idx < this->row_count(); orow_idx++) {
-            for (LDIM mulcol_idx = 0; mulcol_idx < mmul->col_count(); mulcol_idx++) {
-                for (LDIM mulrow_idx = 0; mulrow_idx < mmul->row_count(); mulrow_idx++) {
-                    FPOINT product =
+        for (dimension_size orow_idx = 0; orow_idx < this->row_count(); orow_idx++) {
+            for (dimension_size mulcol_idx = 0; mulcol_idx < mmul->col_count(); mulcol_idx++) {
+                for (dimension_size mulrow_idx = 0; mulrow_idx < mmul->row_count(); mulrow_idx++) {
+                    floating_type product =
                             this->get_val(orow_idx, mulrow_idx) * mmul->get_val(mulrow_idx, mulcol_idx);
                     // add onto the value in the result matrix
                     ret->set_val(orow_idx, mulcol_idx, (ret->get_val(orow_idx, mulcol_idx) + product));
@@ -149,11 +97,11 @@ public:
     }
 
     // squash the matrix to a linear vector (1 dimension)
-    std::vector<FPOINT> *get_vtor() {
-        std::vector<FPOINT> *vtor = new std::vector<FPOINT>();
+    std::vector<floating_type> *get_vtor() {
+        std::vector<floating_type> *vtor = new std::vector<floating_type>();
         // fill in the newly created vector
-        for (LDIM row_idx = 0; row_idx < this->row_count(); row_idx++) {
-            for (LDIM col_idx = 0; col_idx < this->col_count(); col_idx++) {
+        for (dimension_size row_idx = 0; row_idx < this->row_count(); row_idx++) {
+            for (dimension_size col_idx = 0; col_idx < this->col_count(); col_idx++) {
                 vtor->push_back(this->get_val(row_idx, col_idx));
             }
         }
@@ -162,11 +110,11 @@ public:
 
     std::string get_str() {
         std::stringstream sstream;
-        LDIM row_size = this->row_count();
-        LDIM col_size = this->col_count();
+        dimension_size row_size = this->row_count();
+        dimension_size col_size = this->col_count();
 
-        for (LDIM row_idx = 0; row_idx < row_size; row_idx++) {
-            for (LDIM col_idx = 0; col_idx < col_size; col_idx++) {
+        for (dimension_size row_idx = 0; row_idx < row_size; row_idx++) {
+            for (dimension_size col_idx = 0; col_idx < col_size; col_idx++) {
                 sstream << this->values.at(row_idx).at(col_idx)
                         << " \t";
             }
@@ -177,14 +125,14 @@ public:
 
 private:
     // outer vector is rows, inner vector is columns
-    std::vector<std::vector<FPOINT>> values;
+    std::vector<std::vector<floating_type>> values;
 };
 
 class layer {
 public:
     // constructs neurons in a layer
-    layer(LDIM size) {
-        for (LDIM idx = 0; idx < size; idx++) {
+    layer(dimension_size size) {
+        for (dimension_size idx = 0; idx < size; idx++) {
             // create and allocate the neurons
             neuron *n = new neuron(0.0f);
             this->neurons.push_back(n);
@@ -193,24 +141,24 @@ public:
 
     // destroys all neurons in a layer
     ~layer() {
-        for (LDIM idx = 0; idx < (LDIM) this->neurons.size(); idx++) {
+        for (dimension_size idx = 0; idx < (dimension_size) this->neurons.size(); idx++) {
             if (this->neurons.at(idx) != nullptr) {
                 delete this->neurons.at(idx);
             }
         }
     }
 
-    // assigns input raw value to neuron
-    void set_val(LDIM at, FPOINT val) {
+    // assigns input raw_value value to neuron
+    void set_val(dimension_size at, floating_type val) {
         this->neurons.at(at)->set_raw(val);
     }
 
-    // creates a matrix representation of the neuron layer raw values
+    // creates a matrix representation of the neuron layer raw_value values
     matrix *get_raw_matrix() {
         matrix *m = new matrix(1 /*always one dimension*/,
                                this->neurons.size());
 
-        for (LDIM idx = 0; idx < (LDIM) this->neurons.size(); idx++) {
+        for (dimension_size idx = 0; idx < (dimension_size) this->neurons.size(); idx++) {
             m->set_val(0, idx, this->neurons.at(idx)->get_raw());
         }
 
@@ -222,14 +170,14 @@ public:
         matrix *m = new matrix(1 /*always one dimension*/,
                                this->neurons.size());
 
-        for (LDIM idx = 0; idx < (LDIM) this->neurons.size(); idx++) {
+        for (dimension_size idx = 0; idx < (dimension_size) this->neurons.size(); idx++) {
             m->set_val(0, idx, this->neurons.at(idx)->get_fs());
         }
 
         return m;
     }
 
-    LDIM get_size() {
+    dimension_size get_size() {
         return this->neurons.size();
     }
 
@@ -238,7 +186,7 @@ public:
         matrix *m = new matrix(1 /*always one dimension*/,
                                this->neurons.size());
 
-        for (LDIM idx = 0; idx < (LDIM) this->neurons.size(); idx++) {
+        for (dimension_size idx = 0; idx < (dimension_size) this->neurons.size(); idx++) {
             m->set_val(0, idx, this->neurons.at(idx)->get_fsd());
         }
 
@@ -252,16 +200,16 @@ private:
 
 class network {
 public:
-    typedef std::vector<LDIM> topology_vector;
+    typedef std::vector<dimension_size> topology_vector;
 
     network(topology_vector topology) {
         this->topology = topology;
-        for (LDIM top_idx = 0; top_idx < (LDIM) topology.size(); top_idx++) {
+        for (dimension_size top_idx = 0; top_idx < (dimension_size) topology.size(); top_idx++) {
             layer *l = new layer(topology.at(top_idx));
             this->layers.push_back(l);
         }
         // there's topology size - 1 weight matrices
-        for (LDIM top_idx = 0; top_idx < (LDIM) topology.size() - 1; top_idx++) {
+        for (dimension_size top_idx = 0; top_idx < (dimension_size) topology.size() - 1; top_idx++) {
             // in the weight matrix number of rows is the number of input neurons
             // and the number of columns is the number of feed-into output neurons.
             matrix *m = new matrix(topology.at(top_idx), topology.at(top_idx + 1));
@@ -270,7 +218,7 @@ public:
         }
 
         // output errors vector must be as large as the last layer
-        for (LDIM evtor_idx = 0;
+        for (dimension_size evtor_idx = 0;
              evtor_idx < (this->topology.at(this->topology.size() - 1));
              evtor_idx++) {
             err_output.push_back(0.0f);
@@ -279,21 +227,21 @@ public:
 
     // destroy all dynamically allocated instances
     ~network() {
-        for (LDIM layer_idx = 0; layer_idx < (LDIM) this->layers.size(); layer_idx++) {
+        for (dimension_size layer_idx = 0; layer_idx < (dimension_size) this->layers.size(); layer_idx++) {
             if (this->layers.at(layer_idx) != nullptr) {
                 delete this->layers.at(layer_idx);
             }
         }
 
-        for (LDIM wmatrix_idx = 0; wmatrix_idx < (LDIM) this->layers.size(); wmatrix_idx++) {
+        for (dimension_size wmatrix_idx = 0; wmatrix_idx < (dimension_size) this->layers.size(); wmatrix_idx++) {
             if (this->weights.at(wmatrix_idx) != nullptr) {
                 delete this->weights.at(wmatrix_idx);
             }
         }
     }
 
-    void set_input(std::vector<FPOINT> input) {
-        for (LDIM idx = 0; idx < (LDIM) input.size(); idx++) {
+    void set_input(std::vector<floating_type> input) {
+        for (dimension_size idx = 0; idx < (dimension_size) input.size(); idx++) {
             this->layers.at(INPUT_LAYER_IDX)->set_val(idx, input.at(idx));
         }
         this->input = input;
@@ -301,13 +249,13 @@ public:
 
     void feed_forward() {
         // do this for each layer in the network
-        for (LDIM layer_idx = 0; layer_idx < (LDIM) this->layers.size() - 1; layer_idx++) {
+        for (dimension_size layer_idx = 0; layer_idx < (dimension_size) this->layers.size() - 1; layer_idx++) {
             matrix *neuron_matrix;
             matrix *weight_matrix;
             matrix *product_matrix;
 
             if (layer_idx == INPUT_LAYER_IDX) {
-                // get the raw input values fed into the neuron
+                // get the raw_value input values fed into the neuron
                 neuron_matrix = this->layers.at(layer_idx)->get_raw_matrix();
             } else {
                 // get the calculated fast sigmoids
@@ -319,9 +267,9 @@ public:
             // and weight matrix following it
             product_matrix = neuron_matrix->mul(weight_matrix);
             // potential optimisation here, no real need for intermediate vector?
-            std::vector<FPOINT> *product_vals = product_matrix->get_vtor();
+            std::vector<floating_type> *product_vals = product_matrix->get_vtor();
             // feed the next layer
-            for (LDIM next_neuron = 0; next_neuron < (LDIM) product_vals->size(); next_neuron++) {
+            for (dimension_size next_neuron = 0; next_neuron < (dimension_size) product_vals->size(); next_neuron++) {
                 // assign as input to next layer
                 this->layers.at(layer_idx + 1)->set_val(next_neuron, product_vals->at(next_neuron));
             }
@@ -337,9 +285,9 @@ public:
     std::string get_str() {
         std::stringstream sstream;
 
-        for (LDIM layer_idx = 0; layer_idx < (LDIM) this->layers.size(); layer_idx++) {
+        for (dimension_size layer_idx = 0; layer_idx < (dimension_size) this->layers.size(); layer_idx++) {
             if (layer_idx == INPUT_LAYER_IDX) {
-                // if input layer (leftmost) - print raw values
+                // if input layer (leftmost) - print raw_value values
                 matrix *m = this->layers.at(layer_idx)->get_raw_matrix();
                 sstream << "Network input layer: " << std::endl;
                 sstream << m->get_str();
@@ -351,7 +299,7 @@ public:
                 sstream << m->get_str();
                 delete m;
             }
-            if (layer_idx < (LDIM) this->weights.size()) {
+            if (layer_idx < (dimension_size) this->weights.size()) {
                 sstream << FUNKY_DECORATOR << std::endl;
                 sstream << "WEIGHTS at layer " << layer_idx << std::endl;
                 sstream << this->weights.at(layer_idx)->get_str() << std::endl;
@@ -360,10 +308,10 @@ public:
         return sstream.str();
     }
 
-    void calc_err(std::vector<FPOINT> targets) {
+    void calc_err(std::vector<floating_type> targets) {
         // compare output layer size (last index) to targets size
         // and abort if mismatched
-        LDIM output_layer_size =
+        dimension_size output_layer_size =
                 this->layers.at(this->layers.size() - 1)->get_fs_matrix()->col_count();
         if (output_layer_size
             !=
@@ -374,8 +322,8 @@ public:
         }
 
         matrix* m = this->layers.at(this->layers.size() - 1)->get_fs_matrix();
-        for (LDIM idx = 0; idx < (LDIM) targets.size(); idx++) {
-            FPOINT err = m->get_val(0, idx);
+        for (dimension_size idx = 0; idx < (dimension_size) targets.size(); idx++) {
+            floating_type err = m->get_val(0, idx);
             err -= targets.at(idx);
             err_output.at(idx) = err;
         }
@@ -384,9 +332,9 @@ public:
         err_historical.push_back(get_err_total());
     }
 
-    FPOINT get_err_total() {
-        FPOINT total_error = 0.0f;
-        for (LDIM evtor_idx = 0; evtor_idx < (LDIM) this->err_output.size(); evtor_idx++) {
+    floating_type get_err_total() {
+        floating_type total_error = 0.0f;
+        for (dimension_size evtor_idx = 0; evtor_idx < (dimension_size) this->err_output.size(); evtor_idx++) {
             // taking the absolute value to make sure
             // negative and positive errors don't cancel each other
 
@@ -396,11 +344,11 @@ public:
         return total_error;
     }
 
-    std::vector<FPOINT> get_err_output() {
+    std::vector<floating_type> get_err_output() {
         return this->err_output;
     }
 
-    std::vector<FPOINT> get_err_historical() {
+    std::vector<floating_type> get_err_historical() {
         return this->err_historical;
     }
 
@@ -408,23 +356,23 @@ public:
         std::vector<matrix*> new_weights;
         matrix* gradients;
         // direction: output to hidden layer
-        LDIM output_layer_idx = (LDIM) this->layers.size() - 1;
+        dimension_size output_layer_idx = (dimension_size) this->layers.size() - 1;
         // derived values for output layer
         matrix* derived_oth = this->layers.at(output_layer_idx)->get_fsd_matrix();
         // have a column for each neuron in the layer, always one row
         matrix* gradients_oth = new matrix(1, this->layers.at(output_layer_idx)->get_size());
 
-        LDIM idx;
-        for(idx = 0; idx < (LDIM) this->err_output.size(); idx++)
+        dimension_size idx;
+        for(idx = 0; idx < (dimension_size) this->err_output.size(); idx++)
         {
-            FPOINT dfsval = derived_oth->get_val(0, idx);
-            FPOINT errval = this->err_output.at(idx);
-            FPOINT gradient = (dfsval * (errval * 0.01));
+            floating_type dfsval = derived_oth->get_val(0, idx);
+            floating_type errval = this->err_output.at(idx);
+            floating_type gradient = (dfsval * (errval * 0.01));
             // store it in the gradient matrix
             gradients_oth->set_val(0, idx, gradient);
         }
 
-        LDIM last_hidden_layer_idx = output_layer_idx - 1;
+        dimension_size last_hidden_layer_idx = output_layer_idx - 1;
         layer* last_hidden_layer = this->layers.at(last_hidden_layer_idx);
         matrix* weights_oth = this->weights.at(output_layer_idx - 1);
         matrix* gradients_transpose = gradients_oth->transpose();
@@ -440,12 +388,12 @@ public:
 
 
 
-        for(LDIM r = 0; r < delta_weights_oth->row_count(); r++)
+        for(dimension_size r = 0; r < delta_weights_oth->row_count(); r++)
         {
-            for(LDIM c=0; c< delta_weights_oth->col_count(); c++)
+            for(dimension_size c=0; c < delta_weights_oth->col_count(); c++)
             {
-                FPOINT current_weight = weights_oth->get_val(r, c);
-                FPOINT delta_weight = delta_weights_oth->get_val(r, c);
+                floating_type current_weight = weights_oth->get_val(r, c);
+                floating_type delta_weight = delta_weights_oth->get_val(r, c);
                 // here we record the new weight value
                 new_weights_oth->set_val(r, c, current_weight - delta_weight);
             }
@@ -454,9 +402,9 @@ public:
         new_weights.push_back(new_weights_oth);
 
         gradients = new matrix(gradients_oth->row_count(), gradients_oth->col_count());
-        for(LDIM r = 0; r < gradients_oth->row_count(); r++)
+        for(dimension_size r = 0; r < gradients_oth->row_count(); r++)
         {
-            for(LDIM c=0; c< gradients_oth->col_count(); c++)
+            for(dimension_size c=0; c < gradients_oth->col_count(); c++)
             {
                 gradients->set_val(r, c, gradients_oth->get_val(r, c));
             }
@@ -477,15 +425,15 @@ public:
             matrix* weight_matrix = this->weights.at(idx);
             matrix* original_weights = this->weights.at(idx - 1);
             // we are in the last hidden layer
-            for (LDIM r = 0; r < weight_matrix->row_count(); r++)
+            for (dimension_size r = 0; r < weight_matrix->row_count(); r++)
             {
-                FPOINT sum = 0.0f;
-                for(LDIM c = 0; c < weight_matrix->col_count(); c++)
+                floating_type sum = 0.0f;
+                for(dimension_size c = 0; c < weight_matrix->col_count(); c++)
                 {
                     // gradients are same sizes as neurons so gradient row is 0
                     // and column is always the current weight matrix row number
                     // gradients or derived gradients?
-                    FPOINT p = gradients->get_val(0, c /*r?*/) * weight_matrix->get_val(r, c);
+                    floating_type p = gradients->get_val(0, c /*r?*/) * weight_matrix->get_val(r, c);
                     sum += p;
                 }
                 // rows in weight matrix is neurons,
@@ -498,7 +446,7 @@ public:
             // if input layer is on the left
             if((idx - 1) == 0)
             {
-                // input layer stays raw and never gets activated
+                // input layer stays raw_value and never gets activated
                 left_neurons = this->layers.at(idx -1)->get_raw_matrix();
             }
             else
@@ -513,22 +461,22 @@ public:
 
             matrix* new_weights_hidden = new matrix(delta_weights->row_count(), delta_weights->col_count());
 
-            for(LDIM r = 0; r < new_weights_hidden->row_count(); r++)
+            for(dimension_size r = 0; r < new_weights_hidden->row_count(); r++)
             {
-                for(LDIM c=0; c< new_weights_hidden->col_count(); c++)
+                for(dimension_size c=0; c < new_weights_hidden->col_count(); c++)
                 {
-                    FPOINT w = original_weights->get_val(r, c);
-                    FPOINT d = delta_weights->get_val(r, c);
-                    FPOINT new_weight = w - d;
+                    floating_type w = original_weights->get_val(r, c);
+                    floating_type d = delta_weights->get_val(r, c);
+                    floating_type new_weight = w - d;
                     new_weights_hidden->set_val(r, c, new_weight);
                 }
             }
             new_weights.push_back(new_weights_hidden);
 
             gradients = new matrix(derived_gradients->row_count(), derived_gradients->col_count());
-            for(LDIM r = 0; r < gradients->row_count(); r++)
+            for(dimension_size r = 0; r < gradients->row_count(); r++)
             {
-                for(LDIM c=0; c< gradients->col_count(); c++)
+                for(dimension_size c=0; c < gradients->col_count(); c++)
                 {
                     gradients->set_val(r, c, derived_gradients->get_val(r, c));
                 }
@@ -555,17 +503,17 @@ private:
     std::vector<layer*> layers;
     std::vector<matrix*> weights;
     std::vector<matrix*> gradients;
-    std::vector<FPOINT> input;
-    std::vector<FPOINT> err_output;
-    std::vector<FPOINT> err_historical;
+    std::vector<floating_type> input;
+    std::vector<floating_type> err_output;
+    std::vector<floating_type> err_historical;
 };
 
 int main() {
 //    // NEURON CREATED
 //    neuron *n = new neuron(1.5f);
 //    std::cout << "Neuron constructor test:" << std::endl;
-//    std::cout << "raw: " << n->get_raw() << std::endl;
-//    std::cout << "fs: " << n->get_fs() << std::endl;
+//    std::cout << "raw_value: " << n->get_raw() << std::endl;
+//    std::cout << "fast_sigmoid_value: " << n->get_fs() << std::endl;
 //    std::cout << "dfs: " << n->get_fsd() << std::endl << std::endl;
 //
 //    // MATRIX CREATED
@@ -584,7 +532,7 @@ int main() {
 //    std::cout << "Test neural network class:" << std::endl;
 //    network::topology_vector topology = {6, 10, 2};
 //    network *nn = new network(topology);
-//    nn->set_input(std::vector<FPOINT>{0.7f, 3.1f, 5.0f, 0.7f, 3.1f, 5.0f});
+//    nn->set_input(std::vector<floating_type>{0.7f, 3.1f, 5.0f, 0.7f, 3.1f, 5.0f});
 //    std::cout << nn->get_str() << std::endl;
 //
 //    std::cout << "Test matrix multiplication:" << std::endl;
@@ -602,7 +550,7 @@ int main() {
 //    network *real_neural_network = new network(big_topology);
 //
 //    // setting input test (only after defining topology)
-//    real_neural_network->set_input(std::vector<FPOINT>{
+//    real_neural_network->set_input(std::vector<floating_type>{
 //            1, 0, 1
 //    });
 //    std::cout << "Input layer set:" << std::endl;
@@ -615,21 +563,21 @@ int main() {
 //
 //    // net error test (only after feed-forward)
 //    std::cout << "Net error" << std::endl;
-//    real_neural_network->calc_err(std::vector<FPOINT>{0.75, 0.75, 0.75});
+//    real_neural_network->calc_err(std::vector<floating_type>{0.75, 0.75, 0.75});
 //    std::cout << real_neural_network->get_err_total() << std::endl;
 //
 //    std::cout << "Back Propagation" << std::endl;
 //    real_neural_network->bprop();
 
     std::cout << "========== REAL RUN ==========" << std::endl;
-#define LEARNING_ITERATIONS 1000000
+#define LEARNING_ITERATIONS 10000
         network::topology_vector big_topology = {3, 8, 3};
         network* real_neural_network = new network(big_topology);
         for(int i = 0; i < LEARNING_ITERATIONS; i++)
         {
-            real_neural_network->set_input(std::vector<FPOINT>{1, 1, 1});
+            real_neural_network->set_input(std::vector<floating_type>{1, 1, 1});
             real_neural_network->feed_forward();
-            real_neural_network->calc_err(std::vector<FPOINT>{0, 1, 0});
+            real_neural_network->calc_err(std::vector<floating_type>{0, 1, 0});
             std::cout << "Net error: " << real_neural_network->get_err_total() << std::endl;
             real_neural_network->bprop();
         }

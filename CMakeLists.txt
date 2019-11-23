@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(.)
 
 add_executable(SimpleNeuralNetwork_C__
-        SNN.cpp)
+        SNN.cpp neuron.cpp neuron.h snn_config.h)
