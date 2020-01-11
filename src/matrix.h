@@ -12,7 +12,7 @@
 #include <random>
 #include <iostream>
 
-#include "snn_config.h"
+#include "nn_config.h"
 
 class matrix {
 private:

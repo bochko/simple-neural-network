@@ -6,7 +6,7 @@
 #define SIMPLENEURALNETWORK_NEURON_H
 
 #include <cmath>
-#include "snn_config.h"
+#include "nn_config.h"
 
 /**
  * Implements a neuron building block containing three values:

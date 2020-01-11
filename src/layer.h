@@ -9,7 +9,7 @@
 #include <sstream>
 #include <string>
 
-#include "snn_config.h"
+#include "nn_config.h"
 #include "neuron.h"
 #include "matrix.h"
 
