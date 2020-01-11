@@ -79,7 +79,6 @@ matrix* matrix::new_from_multiply(matrix *m) {
             }
         }
     }
-
     return ret;
 }
 
