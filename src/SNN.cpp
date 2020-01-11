@@ -508,7 +508,7 @@ int main() {
 //    neuron *n = new neuron(1.5f);
 //    std::cout << "Neuron constructor test:" << std::endl;
 //    std::cout << "raw_value: " << n->get_raw() << std::endl;
-//    std::cout << "fast_sigmoid_value: " << n->get_fs() << std::endl;
+//    std::cout << "sigmoid_value: " << n->get_fs() << std::endl;
 //    std::cout << "dfs: " << n->get_fsd() << std::endl << std::endl;
 //
 //    // MATRIX CREATED

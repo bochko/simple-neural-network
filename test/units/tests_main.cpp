@@ -6,12 +6,7 @@ int main(int argc, char** argv)
     return RUN_ALL_TESTS();
 }
 
-TEST(SampleTest, test_always_succeeds)
+TEST(SampleTests, test_always_succeeds)
 {
     EXPECT_EQ(0, 0);
-}
-
-TEST(SampleTest, test_always_fails)
-{
-    EXPECT_EQ(1, 0); 
 }
