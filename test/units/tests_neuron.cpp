@@ -8,9 +8,16 @@ TEST(NeuronTests, assert_raw_value)
     ASSERT_EQ(n.get_raw(), 1.0f);
 }
 
-TEST(NeuronTests, assert_fast_sigmoid_value)
+TEST(NeuronTests, assert_sigmoid_value)
 {
     neuron n = neuron(0.0f);
     // for 0 the value of any unmodified sigmoid should be 0.5
     ASSERT_EQ(n.get_fs(), 0.5f);
+}
+
+TEST(NeuronTests, assert_sigmoid_derivative_value)
+{
+    neuron n = neuron(0.0f);
+    // for 0 the value of any unmodified sigmoid derivative should be 0.25
+    ASSERT_EQ(n.get_fsd(), 0.25f);
 }
