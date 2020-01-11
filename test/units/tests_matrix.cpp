@@ -109,4 +109,7 @@ TEST(MatrixTests, squash_to_vector)
 
     auto v = m->new_vector_from_squash();
     ASSERT_EQ(m->get_col_count()*m->get_row_count(), v->size());
+
+    delete m;
+    delete v;
 }
