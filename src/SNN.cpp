@@ -1,8 +1,6 @@
 #include <iostream>
 #include <cmath>
-#include <random>
 #include <string>
-#include <sstream>
 #include <algorithm>
 
 #include <vector>
@@ -10,75 +8,9 @@
 #include "snn_config.h"
 #include "neuron.h"
 #include "matrix.h"
+#include "layer.h"
 
-class layer {
-public:
-    // constructs neurons in a layer
-    layer(int size) {
-        for (int idx = 0; idx < size; idx++) {
-            // create and allocate the neurons
-            neuron *n = new neuron(0.0f);
-            this->neurons.push_back(n);
-        }
-    }
 
-    // destroys all neurons in a layer
-    ~layer() {
-        for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-            if (this->neurons.at(idx) != nullptr) {
-                delete this->neurons.at(idx);
-            }
-        }
-    }
-
-    // assigns input raw_value value to neuron
-    void set_val(int at, floating_type val) {
-        this->neurons.at(at)->set_raw(val);
-    }
-
-    // creates a matrix representation of the neuron layer raw_value values
-    matrix *new_from_raw_values() {
-        matrix *m = new matrix(1 /*always one dimension*/,
-                               this->neurons.size());
-
-        for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-            m->set_value_at(0, idx, this->neurons.at(idx)->get_raw());
-        }
-
-        return m;
-    }
-
-    // fast sigmoid calculated values of neurons in layer
-    matrix *new_from_activated_values() {
-        matrix *m = new matrix(1 /*always one dimension*/,
-                               this->neurons.size());
-
-        for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-            m->set_value_at(0, idx, this->neurons.at(idx)->get_fs());
-        }
-
-        return m;
-    }
-
-    int get_size() {
-        return this->neurons.size();
-    }
-
-    // fast sigmoid derivative values of neurons in layer
-    matrix *new_from_derived_values() {
-        matrix *m = new matrix(1 /*always one dimension*/,
-                               this->neurons.size());
-
-        for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-            m->set_value_at(0, idx, this->neurons.at(idx)->get_fsd());
-        }
-
-        return m;
-    }
-
-private:
-    std::vector<neuron *> neurons;
-};
 
 
 class network {
