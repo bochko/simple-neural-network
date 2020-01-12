@@ -1,6 +1,6 @@
 #include "nn.h"
 
-#define LEARNING_ITERATIONS 10000
+#define LEARNING_ITERATIONS 30000
 
 int main(int argc, char** argv) {
     // NEURON CREATED
@@ -64,11 +64,11 @@ int main(int argc, char** argv) {
     real_neural_network->bprop();
 
     std::cout << "========== REAL RUN ==========" << std::endl;
-    topology_vector big_topology = {3, 4, 4, 3};
+    topology_vector big_topology = {2, 4, 3};
     network* nn3 = new network(big_topology);
     for(int i = 0; i < LEARNING_ITERATIONS; i++)
     {
-        nn3->set_input(std::vector<floating_type>{1, .75f, 0.13f});
+        nn3->set_input(std::vector<floating_type>{1, .75f});
         nn3->feed_forward();
         nn3->calc_err(std::vector<floating_type>{0, 1, 0});
 
