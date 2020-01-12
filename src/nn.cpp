@@ -8,23 +8,21 @@
 
     network::network(topology_vector topology) {
         this->topology = topology;
-        for (int value_at_index : topology) {
-            layer *l = new layer(value_at_index);
+        for (int layer_size : topology) {
+            layer *l = new layer(layer_size);
             this->layers.push_back(l);
         }
         // there's topology size - 1 weight matrices
-        for (int top_idx = 0; top_idx < (int) topology.size() - 1; top_idx++) {
-            // in the weight matrix number of rows is the number of input neurons
-            // and the number of columns is the number of feed-into output neurons.
-            matrix *m = new matrix(topology.at(top_idx), topology.at(top_idx + 1));
+        // in the weight matrix number of rows is the number of input neurons
+        // and the number of columns is the number of feed-into output neurons.
+        for (int i = 0; i < (int) topology.size() - 1; i++) {
+            matrix *m = new matrix(topology.at(i), topology.at(i + 1));
             m->fill_rand(); // initial values are random
             this->weights.push_back(m);
         }
 
         // output errors vector must be as large as the last layer
-        for (int evtor_idx = 0;
-             evtor_idx < (this->topology.at(this->topology.size() - 1));
-             evtor_idx++) {
+        for (int i = 0; i < (this->topology.at(this->topology.size() - 1)); i++) {
             err_output.push_back(0.0f);
         }
     }
@@ -37,9 +35,9 @@
             }
         }
 
-        for (int wmatrix_idx = 0; wmatrix_idx < (int) this->layers.size(); wmatrix_idx++) {
-            if (this->weights.at(wmatrix_idx) != nullptr) {
-                delete this->weights.at(wmatrix_idx);
+        for (int i = 0; i < (int) this->layers.size() - 1; i++) {
+            if (this->weights.at(i) != nullptr) {
+                delete this->weights.at(i);
             }
         }
     }
