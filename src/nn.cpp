@@ -56,7 +56,7 @@
             matrix *product_matrix;
 
             if (layer_idx == INPUT_LAYER_IDX) {
-                // get the raw_value input values fed into the neuron
+                // get the raw input values fed into the neuron
                 neuron_matrix = this->layers.at(layer_idx)->new_from_raw_values();
             } else {
                 // get the calculated fast sigmoids
@@ -88,7 +88,7 @@
 
         for (int layer_idx = 0; layer_idx < (int) this->layers.size(); layer_idx++) {
             if (layer_idx == INPUT_LAYER_IDX) {
-                // if input layer (leftmost) - print raw_value values
+                // if input layer (leftmost) - print raw values
                 matrix *m = this->layers.at(layer_idx)->new_from_raw_values();
                 sstream << "Network input layer: " << std::endl;
                 sstream << m->get_str();
@@ -246,7 +246,7 @@
             // if input layer is on the left
             if((idx - 1) == 0)
             {
-                // input layer stays raw_value and never gets activated
+                // input layer stays raw and never gets activated
                 left_neurons = this->layers.at(idx - 1)->new_from_raw_values();
             }
             else

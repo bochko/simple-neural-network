@@ -21,12 +21,12 @@ layer::~layer() {
     }
 }
 
-// assigns input raw_value value to neuron
+// assigns input raw value to neuron
 void layer::set_val(int at, floating_type val) {
     this->neurons.at(at)->set_raw(val);
 }
 
-// creates a matrix representation of the neuron layer raw_value values
+// creates a matrix representation of the neuron layer raw values
 matrix* layer::new_from_raw_values() {
     matrix *m = new matrix(1 /*always one dimension*/,
                            this->neurons.size());
@@ -44,7 +44,7 @@ matrix* layer::new_from_activated_values() {
                            this->neurons.size());
 
     for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-        m->set_value_at(0, idx, this->neurons.at(idx)->get_fs());
+        m->set_value_at(0, idx, this->neurons.at(idx)->get_sigmoid());
     }
 
     return m;
@@ -60,7 +60,7 @@ matrix* layer::new_from_derived_values() {
                            this->neurons.size());
 
     for (int idx = 0; idx < (int) this->neurons.size(); idx++) {
-        m->set_value_at(0, idx, this->neurons.at(idx)->get_fsd());
+        m->set_value_at(0, idx, this->neurons.at(idx)->get_derivative());
     }
 
     return m;
