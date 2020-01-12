@@ -24,9 +24,9 @@ private:
     // is more memory intensive, but calculating them each time
     // they are needed would introduce unnecessary processing
     // wasted.
-    floating_type raw_value;
-    floating_type sigmoid_value;
-    floating_type sigmoid_derivative_value;
+    floating_type raw;
+    floating_type sigmoid;
+    floating_type derivative;
 public:
     /**
      * Creates a neuron instance and automatically
@@ -40,13 +40,13 @@ public:
      * supported activation function.
      * f(x) = x / (1 + abs(x))
      */
-    void calc_sigmoid();
+    void calculate_sigmoid();
 
     /**
      * Derivative of the fast sigmoid activation function.
      * f'(x) = f(x) * (1 - f(x))
      */
-    void calc_sigmoid_derivative();
+    void calculate_derivative();
 
     /*
      * Re-sets the neuron raw input and recalculates
@@ -56,8 +56,8 @@ public:
 
     // Getters
     floating_type get_raw();
-    floating_type get_fs();
-    floating_type get_fsd();
+    floating_type get_sigmoid();
+    floating_type get_derivative();
 };
 
 #endif // SIMPLENEURALNETWORK_NEURON_H

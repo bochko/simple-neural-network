@@ -24,10 +24,10 @@ public:
     // destroys all neurons in a layer
     ~layer();
 
-    // assigns input raw_value value to neuron
+    // assigns input raw value to neuron
     void set_val(int at, floating_type val);
 
-    // creates a matrix representation of the neuron layer raw_value values
+    // creates a matrix representation of the neuron layer raw values
     matrix *new_from_raw_values();
 
     // fast sigmoid calculated values of neurons in layer
